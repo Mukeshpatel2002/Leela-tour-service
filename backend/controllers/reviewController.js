@@ -11,6 +11,10 @@ import {
 
 const escapeRegex = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
+// Contact details are for the admin only. GET /api/reviews is a public route, so
+// the anonymous branch must not carry them back.
+const PUBLIC_REVIEW_FIELDS = "-userEmail -userPhone -__v";
+
 const parseReview = (body = {}, { partial = false } = {}) => {
   const payload = {};
   const has = (key) => body[key] !== undefined;
@@ -60,8 +64,9 @@ const parseReview = (body = {}, { partial = false } = {}) => {
 export const getAllReviews = async (req, res, next) => {
   try {
     const filter = {};
+    const isAdmin = isAdminRequest(req);
 
-    if (!isAdminRequest(req)) {
+    if (!isAdmin) {
       filter.isActive = true;
       filter.isApproved = { $ne: false };
     } else if (req.query.status === "pending") {
@@ -74,7 +79,10 @@ export const getAllReviews = async (req, res, next) => {
       filter.tour = new RegExp(escapeRegex(String(req.query.tour).trim()), "i");
     }
 
-    const reviews = await Review.find(filter).sort({ createdAt: -1 }).limit(500);
+    let query = Review.find(filter).sort({ createdAt: -1 }).limit(500);
+    if (!isAdmin) query = query.select(PUBLIC_REVIEW_FIELDS);
+
+    const reviews = await query;
     res.json({ success: true, count: reviews.length, reviews });
   } catch (error) {
     next(error);
@@ -97,7 +105,13 @@ export const submitPublicReview = async (req, res, next) => {
     res.status(201).json({
       success: true,
       message: "Thank you! Your review has been submitted and is waiting for approval.",
-      review: newReview,
+      review: {
+        _id: newReview._id,
+        name: newReview.name,
+        tour: newReview.tour,
+        rating: newReview.rating,
+        isApproved: newReview.isApproved,
+      },
     });
   } catch (error) {
     next(error);
