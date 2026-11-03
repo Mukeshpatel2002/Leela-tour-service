@@ -1,36 +1,46 @@
-import React from "react";
+import React, { Suspense, lazy } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { AdminAuthProvider } from "./context/AdminAuthContext";
 
 // Public Pages
 import HomePage from "./pages/HomePage";
-import TourDetailsPage from "./pages/TourDetailsPage";
 import ContactPage from "./pages/ContactPage";
 import ThemedTourPage from "./pages/themed-tour";
 import GroupTourPage from "./pages/group-tour";
 import CategoriesPage from "./pages/CategoriesPage";
-import SubmitReviewPage from "./pages/SubmitReviewPage";
+
+// Lazy: keeps the admin portal and the tour detail view out of the bundle that
+// first-time visitors download.
+const TourDetailsPage = lazy(() => import("./pages/TourDetailsPage"));
+const SubmitReviewPage = lazy(() => import("./pages/SubmitReviewPage"));
 
 // Admin Pages
-import AdminLogin from "./pages/admin/AdminLogin";
-import ResetPassword from "./pages/admin/ResetPassword";
-import AdminProfile from "./pages/admin/AdminProfile";
-import AdminLayout from "./pages/admin/AdminLayout";
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import ManageTours from "./pages/admin/ManageTours";
-import ManageContent from "./pages/admin/ManageContent";
-import ManageEnquiries from "./pages/admin/ManageEnquiries";
-import ManageReviews from "./pages/admin/ManageReviews";
-import ManageFaqs from "./pages/admin/ManageFaqs";
+const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
+const ResetPassword = lazy(() => import("./pages/admin/ResetPassword"));
+const AdminProfile = lazy(() => import("./pages/admin/AdminProfile"));
+const AdminLayout = lazy(() => import("./pages/admin/AdminLayout"));
+const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
+const ManageTours = lazy(() => import("./pages/admin/ManageTours"));
+const ManageContent = lazy(() => import("./pages/admin/ManageContent"));
+const ManageEnquiries = lazy(() => import("./pages/admin/ManageEnquiries"));
+const ManageReviews = lazy(() => import("./pages/admin/ManageReviews"));
+const ManageFaqs = lazy(() => import("./pages/admin/ManageFaqs"));
 import ProtectedRoute from "./components/common/ProtectedRoute";
+
+const RouteFallback = () => (
+  <div className="flex min-h-[50vh] w-full items-center justify-center">
+    <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#07569b] border-t-transparent" />
+  </div>
+);
 
 export default function App() {
   return (
     <AdminAuthProvider>
       <BrowserRouter>
         <Toaster position="top-right" />
-        <Routes>
+        <Suspense fallback={<RouteFallback />}>
+          <Routes>
           {/* Public Routes (No traveler login required) */}
           <Route path="/" element={<HomePage />} />
           <Route path="/tour/:id" element={<TourDetailsPage />} />
@@ -68,6 +78,7 @@ export default function App() {
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        </Suspense>
       </BrowserRouter>
     </AdminAuthProvider>
   );
