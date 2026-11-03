@@ -15,6 +15,47 @@ import {
 
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
+// Base64 images are stored inline, so a list of up to 500 full tours can dwarf the
+// 10mb request cap. Cards only need the light fields; the detail view fetches the
+// rest by id, and admins get everything because the edit form reads it from the list.
+const TOUR_LIST_EXCLUSIONS =
+  "-gallery -itinerary -inclusions -exclusions -videoThumbnail -videoUrl -departureDates";
+
+// Mongo caps a document at 16MB. Per-field maxlength alone would still let a tour
+// combine 20 gallery images plus a cover into a document that can never be saved.
+const TOUR_IMAGE_BUDGET = 12_000_000;
+const IMAGE_FIELDS = ["image", "videoThumbnail"];
+const IMAGE_ARRAY_FIELDS = ["gallery"];
+
+const imagePayloadSize = (source) =>
+  IMAGE_FIELDS.reduce(
+    (total, key) => total + (typeof source[key] === "string" ? source[key].length : 0),
+    0
+  ) +
+  IMAGE_ARRAY_FIELDS.reduce(
+    (total, key) =>
+      total +
+      (Array.isArray(source[key])
+        ? source[key].reduce(
+            (sum, item) => sum + (typeof item === "string" ? item.length : 0),
+            0
+          )
+        : 0),
+    0
+  );
+
+const assertImageBudget = (candidate) => {
+  const bytes = imagePayloadSize(candidate);
+  if (bytes > TOUR_IMAGE_BUDGET) {
+    throw new ApiError(
+      400,
+      `Tour ki total images bahut badi hain (${(bytes / 1_000_000).toFixed(1)} MB, limit ${(
+        TOUR_IMAGE_BUDGET / 1_000_000
+      ).toFixed(0)} MB). Chhoti images upload karein.`
+    );
+  }
+};
+
 const TOUR_FIELDS = [
   "title",
   "tourType",
@@ -199,6 +240,8 @@ const parseTour = (body) => {
     parsed.isActive = optionalBoolean(data.isActive, "isActive", true);
   }
 
+  assertImageBudget(parsed);
+
   return parsed;
 };
 
@@ -221,7 +264,10 @@ export const getAllTours = async (req, res, next) => {
       filter.tourType = new RegExp(escapeRegex(typeClean), "i");
     }
 
-    const tours = await Tour.find(filter).sort({ createdAt: -1 }).limit(500);
+    let query = Tour.find(filter).sort({ createdAt: -1 }).limit(500);
+    if (!req.admin) query = query.select(TOUR_LIST_EXCLUSIONS);
+
+    const tours = await query;
     res.json({ success: true, count: tours.length, tours });
   } catch (error) {
     next(error);
@@ -283,6 +329,7 @@ export const updateTour = async (req, res, next) => {
     if (!tour) return res.status(404).json({ success: false, message: "Tour not found" });
 
     tour.set(payload);
+    assertImageBudget(tour);
     await tour.save();
     res.json({ success: true, tour });
   } catch (error) {
@@ -297,12 +344,12 @@ export const updateTourGallery = async (req, res, next) => {
       optionalImage(image, `Gallery image ${index + 1}`)
     );
 
-    const tour = await Tour.findByIdAndUpdate(
-      req.params.id,
-      { gallery: images },
-      { new: true, runValidators: true }
-    );
+    const tour = await Tour.findById(req.params.id);
     if (!tour) return res.status(404).json({ success: false, message: "Tour not found" });
+
+    tour.gallery = images;
+    assertImageBudget(tour);
+    await tour.save();
 
     res.json({ success: true, gallery: tour.gallery, tour });
   } catch (error) {
