@@ -8,7 +8,6 @@ import { getContent, getReviews } from "../api/api";
 import bannerImage from "../assets/banner1.jpg";
 import tripImage from "../assets/trip.jpg";
 import whyImage from "../assets/why.jpg";
-import heroImage from "../assets/hero.png";
 import traveler1 from "../assets/traveler1.png";
 import traveler2 from "../assets/traveler2.png";
 import traveler3 from "../assets/traveler3.png";
@@ -240,7 +239,7 @@ export default function AboutPage() {
               {[0, 1, 2].map((slot) => {
                 const src =
                   intro.images?.[slot] ||
-                  (slot === 0 ? whyImage : slot === 1 ? tripImage : heroImage);
+                  (slot === 0 ? whyImage : slot === 1 ? tripImage : bannerImage);
                 const positions = [
                   "left-[4%] top-[6%] h-[62%] w-[58%] rotate-[-4deg]",
                   "right-[2%] top-[2%] h-[42%] w-[38%] rotate-[6deg]",
