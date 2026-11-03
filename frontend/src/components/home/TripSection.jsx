@@ -149,6 +149,8 @@ export default function TripSection({
 }) {
   const [tours, setTours] = useState([]);
   const [loading, setLoading] = useState(!toursData);
+  const [failed, setFailed] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
   const contact = useContact();
 
   useEffect(() => {
@@ -157,6 +159,8 @@ export default function TripSection({
       setLoading(false);
       return;
     }
+
+    let cancelled = false;
 
     const fetchTours = async () => {
       try {
@@ -167,18 +171,24 @@ export default function TripSection({
         if (!tourType && !category) params.featured = "true";
 
         const res = await getTours(params);
+        if (cancelled) return;
         if (res.data?.success) {
           setTours(res.data.tours || []);
+          setFailed(false);
         }
       } catch (err) {
-        console.error("Error loading tours:", err);
+        if (!cancelled) setFailed(true);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
     fetchTours();
-  }, [tourType, category, toursData]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [tourType, category, toursData, reloadKey]);
 
   return (
     <section id="trips-section" className="mx-auto mt-12 mb-20 w-full max-w-[1440px] px-5 sm:px-8 lg:px-10">
@@ -211,6 +221,22 @@ export default function TripSection({
           {[1, 2, 3].map((n) => (
             <div key={n} className="h-96 rounded-2xl bg-gray-100 animate-pulse" />
           ))}
+        </div>
+      ) : failed ? (
+        <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-12 text-center">
+          <p className="text-lg font-semibold font-montserrat text-gray-700">
+            Tours load nahi ho paye.
+          </p>
+          <p className="mt-1 font-montserrat text-sm text-gray-500">
+            Internet ya server check karke dobara try karein.
+          </p>
+          <button
+            type="button"
+            onClick={() => setReloadKey((k) => k + 1)}
+            className="mt-5 inline-flex items-center gap-2 rounded-full bg-[#07569b] px-6 py-2.5 font-montserrat text-sm font-semibold text-white shadow transition hover:bg-[#064578] cursor-pointer"
+          >
+            Retry
+          </button>
         </div>
       ) : tours.length > 0 ? (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">

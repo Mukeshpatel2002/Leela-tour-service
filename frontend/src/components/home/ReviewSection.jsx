@@ -7,21 +7,52 @@ import traveler3 from "../../assets/traveler3.png";
 export default function ReviewSection() {
   const scrollRef = useRef(null);
   const [reviews, setReviews] = useState([]);
+  const [failed, setFailed] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
   const travelerAvatars = [traveler1, traveler2, traveler3];
 
   useEffect(() => {
+    let cancelled = false;
+
     const fetchReviews = async () => {
       try {
         const res = await getReviews();
+        if (cancelled) return;
         if (res.data?.success && res.data.reviews?.length) {
           setReviews(res.data.reviews);
+          setFailed(false);
         }
       } catch (err) {
-        // Fallback reviews
+        if (!cancelled) setFailed(true);
       }
     };
     fetchReviews();
-  }, []);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [reloadKey]);
+
+  if (failed && reviews.length === 0) {
+    return (
+      <section className="w-full bg-white py-14 sm:py-18">
+        <div className="mx-auto w-full max-w-[1440px] px-5 sm:px-8 lg:px-10">
+          <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-10 text-center">
+            <p className="font-montserrat text-lg font-semibold text-gray-700">
+              Reviews abhi load nahi ho paye.
+            </p>
+            <button
+              type="button"
+              onClick={() => setReloadKey((k) => k + 1)}
+              className="mt-4 rounded-full bg-[#07569b] px-6 py-2.5 font-montserrat text-sm font-semibold text-white transition hover:bg-[#064578] cursor-pointer"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   const scrollReviews = (direction) => {
     if (scrollRef.current) {

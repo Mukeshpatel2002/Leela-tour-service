@@ -7,20 +7,30 @@ export default function FaqSection() {
   const contact = useContact();
   const [openIndex, setOpenIndex] = useState(0);
   const [faqs, setFaqs] = useState([]);
+  const [failed, setFailed] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
+    let cancelled = false;
+
     const fetchFaqs = async () => {
       try {
         const res = await getFaqs();
+        if (cancelled) return;
         if (res.data?.success && res.data.faqs?.length) {
           setFaqs(res.data.faqs);
+          setFailed(false);
         }
       } catch (err) {
-        // Fallback faqs
+        if (!cancelled) setFailed(true);
       }
     };
     fetchFaqs();
-  }, []);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [reloadKey]);
 
   const whatsappLink = `https://wa.me/${contact.whatsapp}?text=${encodeURIComponent(
     "Hello Leela Tours, I have a question about your tours."
@@ -77,6 +87,24 @@ export default function FaqSection() {
 
         {/* Right Side: FAQ Accordion */}
         <div className="flex flex-col gap-3.5 lg:pt-4">
+          {failed && faqs.length === 0 && (
+            <div className="rounded-[18px] border-2 border-dashed border-orange-300 bg-white p-7 text-center">
+              <p className="font-montserrat text-base font-semibold text-gray-700">
+                FAQs load nahi ho paye.
+              </p>
+              <p className="mt-1 font-montserrat text-sm text-gray-500">
+                Tab tak koi sawal ho to WhatsApp par pooch lein — ya neeche retry karein.
+              </p>
+              <button
+                type="button"
+                onClick={() => setReloadKey((k) => k + 1)}
+                className="mt-4 rounded-full bg-[#07569b] px-6 py-2.5 font-montserrat text-sm font-semibold text-white transition hover:bg-[#064578] cursor-pointer"
+              >
+                Retry
+              </button>
+            </div>
+          )}
+
           {faqs.map((item, index) => {
             const isOpen = openIndex === index;
 
