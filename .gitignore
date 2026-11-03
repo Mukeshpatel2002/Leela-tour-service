@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+
+# Build output
+frontend/dist/
+
+# Original (unoptimized) image backups - keep locally, not in the repo
+frontend/src/assets/originals/
+
+# Environment files (never commit real secrets)
+.env
+.env.local
+.env.*.local
+backend/.env
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

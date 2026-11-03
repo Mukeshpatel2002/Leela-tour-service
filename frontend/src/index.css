@@ -1,0 +1,57 @@
+@import url('https://fonts.googleapis.com/css2?family=Caladea:ital,wght@0,400;0,700;1,400;1,700&family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600;1,700&display=swap');
+
+@import "tailwindcss";
+
+@theme {
+  --font-primary: "Caladea", serif;
+  --font-secondary: "Montserrat", sans-serif;
+  --font-caladea: "Caladea", serif;
+  --font-montserrat: "Montserrat", sans-serif;
+}
+
+:root {
+  --font-primary: "Caladea", serif;
+  --font-secondary: "Montserrat", sans-serif;
+}
+
+/* Global Font Setup: Secondary = Montserrat, Primary = Caladea */
+html, body {
+  font-family: var(--font-secondary), "Montserrat", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Primary Font for all Headings and Brand Titles */
+h1, h2, h3, h4, h5, h6, .font-primary, .font-caladea {
+  font-family: var(--font-primary), "Caladea", serif;
+}
+
+/* Secondary Font for Body text, UI, Buttons, Inputs, Labels */
+p, span, a, button, input, select, textarea, label, li, td, th, .font-secondary, .font-montserrat {
+  font-family: var(--font-secondary), "Montserrat", sans-serif;
+}
+
+/* Montserrat Weights: Small (300-400), Medium (500-600), High/Bold (700-800) */
+.font-montserrat-small {
+  font-family: "Montserrat", sans-serif;
+  font-weight: 400;
+}
+
+.font-montserrat-medium {
+  font-family: "Montserrat", sans-serif;
+  font-weight: 500;
+}
+
+.font-montserrat-semibold {
+  font-family: "Montserrat", sans-serif;
+  font-weight: 600;
+}
+
+.font-montserrat-high {
+  font-family: "Montserrat", sans-serif;
+  font-weight: 700;
+}
+
+.font-montserrat-extrabold {
+  font-family: "Montserrat", sans-serif;
+  font-weight: 800;
+}
