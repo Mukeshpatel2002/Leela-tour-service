@@ -13,7 +13,7 @@ export const apiLimiter = rateLimit({
   message: message("Bahut zyada requests bheji gayi hain. Thodi der baad try karein."),
 });
 
-// Login / password reset endpoints.
+// Login / password-reset confirmation attempts.
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: isProduction ? 15 : 100,
@@ -21,6 +21,17 @@ export const authLimiter = rateLimit({
   legacyHeaders: false,
   skipSuccessfulRequests: true,
   message: message("Too many attempts. Please try again after 15 minutes."),
+});
+
+// "Email me a reset link" requests. This endpoint answers 200 even for unknown
+// emails, so skipSuccessfulRequests would never count anything and would leave
+// SMTP quota open to abuse.
+export const passwordResetRequestLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: isProduction ? 5 : 30,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  message: message("Bahut zyada reset requests. Thodi der baad try karein."),
 });
 
 // Public form submissions (enquiries, reviews).

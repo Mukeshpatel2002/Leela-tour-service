@@ -158,10 +158,18 @@ export const forgotPassword = async (req, res, next) => {
     const genericMessage =
       "Agar ye email registered hai to password reset link bhej diya gaya hai. Apna inbox check karein.";
 
-    const admin = await Admin.findOne({ email });
+    // resetPassword* are select:false, so they must be pulled in explicitly or the
+    // cooldown below reads undefined and every request fires a fresh email.
+    const admin = await Admin.findOne({ email }).select("+resetPasswordToken +resetPasswordExpire");
 
     // Same response for unknown emails so accounts cannot be enumerated.
     if (!admin) {
+      return res.json({ success: true, message: genericMessage });
+    }
+
+    // A token issued less than 15 minutes ago is still live; a second mail would
+    // only burn SMTP quota. Reply stays identical so nothing is leaked either way.
+    if (admin.resetPasswordExpire && admin.resetPasswordExpire.getTime() > Date.now()) {
       return res.json({ success: true, message: genericMessage });
     }
 

@@ -9,13 +9,13 @@ import {
   resetPassword,
 } from "../controllers/authController.js";
 import { protectAdmin } from "../middleware/authMiddleware.js";
-import { authLimiter } from "../middleware/rateLimiters.js";
+import { authLimiter, passwordResetRequestLimiter } from "../middleware/rateLimiters.js";
 
 const router = express.Router();
 
 // Public routes
 router.post("/login", authLimiter, adminLogin);
-router.post("/forgot-password", authLimiter, forgotPassword);
+router.post("/forgot-password", passwordResetRequestLimiter, forgotPassword);
 router.post("/reset-password/:token", authLimiter, resetPassword);
 
 // Protected Admin routes
