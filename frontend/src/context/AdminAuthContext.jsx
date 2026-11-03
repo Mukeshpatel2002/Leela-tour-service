@@ -1,12 +1,31 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { loginAdmin, logoutAdmin, getAdminMe } from "../api/api";
+import {
+  loginAdmin,
+  logoutAdmin,
+  getAdminMe,
+  TOKEN_KEY,
+  ADMIN_SESSION_EXPIRED_EVENT,
+} from "../api/api";
 
 const AdminAuthContext = createContext();
 
 export const AdminAuthProvider = ({ children }) => {
   const [admin, setAdmin] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem("leela_admin_token") || null);
+  const [token, setToken] = useState(localStorage.getItem(TOKEN_KEY) || null);
   const [loading, setLoading] = useState(true);
+
+  // Drop a session the server has already rejected. No /auth/logout call: the
+  // token is dead, so asking the server to invalidate it would just 401 again.
+  useEffect(() => {
+    const clearExpiredSession = () => {
+      if (!localStorage.getItem(TOKEN_KEY)) return;
+      localStorage.removeItem(TOKEN_KEY);
+      setToken(null);
+      setAdmin(null);
+    };
+    window.addEventListener(ADMIN_SESSION_EXPIRED_EVENT, clearExpiredSession);
+    return () => window.removeEventListener(ADMIN_SESSION_EXPIRED_EVENT, clearExpiredSession);
+  }, []);
 
   // Check existing session
   useEffect(() => {
@@ -19,7 +38,7 @@ export const AdminAuthProvider = ({ children }) => {
           } else {
             logout();
           }
-        } catch (err) {
+        } catch {
           logout();
         }
       }
@@ -33,7 +52,7 @@ export const AdminAuthProvider = ({ children }) => {
     try {
       const res = await loginAdmin({ email, password });
       if (res.data?.success) {
-        localStorage.setItem("leela_admin_token", res.data.token);
+        localStorage.setItem(TOKEN_KEY, res.data.token);
         setToken(res.data.token);
         setAdmin(res.data.admin);
         return { success: true };
@@ -49,18 +68,18 @@ export const AdminAuthProvider = ({ children }) => {
 
   const logout = () => {
     // Invalidate the token server-side so a stolen token cannot be replayed.
-    const activeToken = localStorage.getItem("leela_admin_token");
+    const activeToken = localStorage.getItem(TOKEN_KEY);
     if (activeToken) {
       logoutAdmin(activeToken).catch(() => {});
     }
-    localStorage.removeItem("leela_admin_token");
+    localStorage.removeItem(TOKEN_KEY);
     setToken(null);
     setAdmin(null);
   };
 
   const updateAdminSession = (newAdmin, newToken) => {
     if (newToken) {
-      localStorage.setItem("leela_admin_token", newToken);
+      localStorage.setItem(TOKEN_KEY, newToken);
       setToken(newToken);
     }
     if (newAdmin) {

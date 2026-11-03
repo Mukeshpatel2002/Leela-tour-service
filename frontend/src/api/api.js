@@ -6,13 +6,28 @@ const API = axios.create({
     (import.meta.env.PROD ? "/api" : "http://localhost:5000/api"),
 });
 
+export const TOKEN_KEY = "leela_admin_token";
+
 // Attach JWT token automatically for admin requests
 API.interceptors.request.use((config) => {
-  const token = localStorage.getItem("leela_admin_token");
+  const token = localStorage.getItem(TOKEN_KEY);
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
+});
+
+// A rejected token must end the session everywhere, not just on the page that
+// happened to check it at mount time.
+export const ADMIN_SESSION_EXPIRED_EVENT = "leela:admin-session-expired";
+
+API.interceptors.response.use(null, (error) => {
+  const url = error.config?.url || "";
+  const isLoginAttempt = url.includes("/auth/login");
+  if (error.response?.status === 401 && !isLoginAttempt) {
+    window.dispatchEvent(new Event(ADMIN_SESSION_EXPIRED_EVENT));
+  }
+  return Promise.reject(error);
 });
 
 // Auth API
