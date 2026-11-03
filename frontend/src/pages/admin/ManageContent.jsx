@@ -35,16 +35,205 @@ const compressImage = (file, maxWidth = 1600, maxHeight = 900, quality = 0.85) =
   });
 };
 
+// Mirrors the icon enum in backend/models/Content.js
+const ABOUT_ICONS = [
+  "diamond",
+  "bus",
+  "guide",
+  "clock",
+  "smile",
+  "shield",
+  "heart",
+  "users",
+  "phone",
+  "map",
+  "star",
+];
+
+const ABOUT_DEFAULTS = {
+  banner: { image: "", title: "About Us", subtitle: "Know the team" },
+  intro: {
+    tag: "About Leela Tours",
+    title: "Your Trusted Travel Partner for Unforgettable Journeys",
+    text: "At Leela Tours, we believe travel is not just about visiting places, but about creating memories for a lifetime.",
+    ctaText: "Explore Our Tours",
+    stats: [
+      { number: "500+", label: "Happy Travellers" },
+      { number: "40+", label: "Tour Packages" },
+      { number: "20+", label: "Destinations" },
+      { number: "10+", label: "Years of Experience" },
+    ],
+    images: ["", "", ""],
+  },
+  story: {
+    tag: "Our Story",
+    title: "A Journey of Passion and Trust",
+    text1: "Leela Tours was founded with a simple dream — to make travel Easy, Safe and Memorable for everyone.",
+    text2: "Today, we are proud to be one of the most trusted travel partners.",
+    image: "",
+    trustPoints: [
+      { title: "Trusted by 500+ Travellers" },
+      { title: "Safe & Reliable Travel" },
+      { title: "24/7 Travel Support" },
+      { title: "Memories for Lifetime" },
+    ],
+  },
+  why: {
+    tag: "Why Choose Us",
+    title: "Your Perfect Travel Companion",
+    items: [
+      { title: "Best Tour Packages at Great Prices", description: "Great prices.", icon: "diamond" },
+      { title: "Comfortable Travel Experience", description: "Clean vehicles.", icon: "bus" },
+      { title: "Expert Travel Guides", description: "Local knowledge.", icon: "guide" },
+      { title: "24/7 Customer Support", description: "Always reachable.", icon: "clock" },
+      { title: "Happy Customers Our Priority", description: "You first.", icon: "smile" },
+    ],
+  },
+  team: {
+    tag: "Our Team",
+    title: "Meet Our Travel Experts",
+    text: "Our dedicated team of travel experts is always ready to plan your perfect trip.",
+    ctaText: "Know More",
+    members: [
+      { name: "Mukesh Patel", role: "Founder & CEO", photo: "" },
+      { name: "Neha Sharma", role: "Travel Consultant", photo: "" },
+      { name: "Rohit Verma", role: "Tour Manager", photo: "" },
+    ],
+  },
+  testimonials: { tag: "Testimonials", title: "What Our Travellers Say" },
+  cta: {
+    title: "Ready to Plan Your Next Trip?",
+    subtitle: "Let's turn your travel dreams into reality with Leela Tours.",
+    buttonText: "Book on WhatsApp",
+  },
+};
+
+const readAt = (source, keys) =>
+  keys.reduce((node, key) => (node == null ? undefined : node[key]), source);
+
+const writeAt = (source, keys, value) => {
+  if (!keys.length) return value;
+  const [head, ...rest] = keys;
+  const current = source && typeof source === "object" ? source : {};
+  const next = writeAt(current[head], rest, value);
+  if (Array.isArray(current) && typeof head === "number") {
+    const copy = [...current];
+    copy[head] = next;
+    return copy;
+  }
+  return { ...current, [head]: next };
+};
+
+// A site that has never saved its About page returns no about arrays at all, and
+// the editor would render empty lists. Fill the shape from the defaults.
+const ensureAboutDefaults = (data) => {
+  const about = data?.about || {};
+  const next = { ...data };
+
+  Object.entries(ABOUT_DEFAULTS).forEach(([group, defaults]) => {
+    const current = about[group] || {};
+    const merged = { ...defaults, ...current };
+    Object.keys(defaults).forEach((key) => {
+      if (Array.isArray(defaults[key]) && !current[key]?.length) {
+        merged[key] = defaults[key].map((item) =>
+          item && typeof item === "object" ? { ...item } : item
+        );
+      }
+    });
+    if (group === "intro" && merged.images?.length < 3) {
+      merged.images = [...(merged.images || []), "", ""].slice(0, 3);
+    }
+    next.about = { ...(next.about || {}), [group]: merged };
+  });
+
+  return next;
+};
+
+function AboutField({ label, value, onChange, multiline = false, rows = 3, placeholder = "", hint = "" }) {
+  return (
+    <div>
+      <label className="block font-semibold text-gray-700 mb-1">{label}</label>
+      {multiline ? (
+        <textarea
+          rows={rows}
+          value={value ?? ""}
+          placeholder={placeholder}
+          onChange={(event) => onChange(event.target.value)}
+          className="w-full rounded-xl border border-gray-300 p-3 text-sm focus:border-blue-500 bg-white"
+        />
+      ) : (
+        <input
+          type="text"
+          value={value ?? ""}
+          placeholder={placeholder}
+          onChange={(event) => onChange(event.target.value)}
+          className="h-10 w-full rounded-xl border border-gray-300 px-3 text-sm focus:border-blue-500 bg-white"
+        />
+      )}
+      {hint && <p className="mt-1 text-[11px] text-gray-400">{hint}</p>}
+    </div>
+  );
+}
+
+function AboutGroupTitle({ title, note }) {
+  return (
+    <div className="border-b border-gray-200 pb-2">
+      <h3 className="font-bold text-gray-900 text-sm">{title}</h3>
+      {note && <p className="text-gray-500 text-[11px] mt-0.5">{note}</p>}
+    </div>
+  );
+}
+
+function AboutImagePicker({ label, src, onPick, onClear, height = "h-28" }) {
+  return (
+    <div className="rounded-xl border border-gray-200 bg-gray-50/70 p-3">
+      <p className="mb-2 text-[11px] font-semibold text-gray-600">{label}</p>
+      <div className={`w-full ${height} overflow-hidden rounded-lg border border-gray-300 bg-gray-200`}>
+        {src ? (
+          <img src={src} alt="" className="h-full w-full object-cover" />
+        ) : (
+          <div className="flex h-full items-center justify-center text-[11px] text-gray-500">
+            Built-in default image
+          </div>
+        )}
+      </div>
+      <div className="mt-2 flex gap-2">
+        <button
+          type="button"
+          onClick={onPick}
+          className="inline-flex items-center gap-1.5 rounded-lg bg-[#07569b] px-3 py-1.5 text-[11px] font-bold text-white transition hover:bg-blue-800 cursor-pointer"
+        >
+          <FaUpload className="text-[11px]" />
+          Upload
+        </button>
+        {src && (
+          <button
+            type="button"
+            onClick={onClear}
+            className="rounded-lg border border-red-200 px-3 py-1.5 text-[11px] font-semibold text-red-600 transition hover:bg-red-50 cursor-pointer"
+          >
+            Reset
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function ManageContent() {
   const [content, setContent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState("hero"); // hero | themedHero | groupHero | offer | contact | footer
+  const [activeTab, setActiveTab] = useState("hero"); // hero | themedHero | groupHero | offer | contact | footer | aboutIntro | aboutStory | aboutTeam
 
   // File input refs for each banner
   const homeFileRef = useRef(null);
   const themedFileRef = useRef(null);
   const groupFileRef = useRef(null);
+
+  // One shared picker for every About image; the target path is remembered on click.
+  const aboutFileRef = useRef(null);
+  const aboutUploadTarget = useRef(null);
 
   const ensureBannerDefaults = (data) => {
     return {
@@ -110,7 +299,7 @@ export default function ManageContent() {
         setLoading(true);
         const res = await getContent();
         if (res.data?.success) {
-          setContent(ensureBannerDefaults(res.data.content));
+          setContent(ensureAboutDefaults(ensureBannerDefaults(res.data.content)));
         }
       } catch (err) {
         toast.error("Failed to load site content.");
@@ -141,6 +330,52 @@ export default function ManageContent() {
     }
   };
 
+  const setAbout = (keys, value) =>
+    setContent((prev) => ({ ...prev, about: writeAt(prev.about, keys, value) }));
+
+  const patchAboutItem = (keys, index, patch) =>
+    setContent((prev) => {
+      const list = [...(readAt(prev.about, keys) || [])];
+      list[index] = { ...list[index], ...patch };
+      return { ...prev, about: writeAt(prev.about, keys, list) };
+    });
+
+  const addAboutItem = (keys, template) =>
+    setContent((prev) => ({
+      ...prev,
+      about: writeAt(prev.about, keys, [...(readAt(prev.about, keys) || []), template]),
+    }));
+
+  const removeAboutItem = (keys, index) =>
+    setContent((prev) => ({
+      ...prev,
+      about: writeAt(
+        prev.about,
+        keys,
+        (readAt(prev.about, keys) || []).filter((_, i) => i !== index)
+      ),
+    }));
+
+  const pickAboutImage = (keys, maxWidth, maxHeight) => {
+    aboutUploadTarget.current = { keys, maxWidth, maxHeight };
+    aboutFileRef.current?.click();
+  };
+
+  const handleAboutFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    const target = aboutUploadTarget.current;
+    e.target.value = "";
+    if (!file || !target) return;
+    try {
+      toast.loading("Compressing image...", { id: "upload-about" });
+      const base64 = await compressImage(file, target.maxWidth, target.maxHeight);
+      setAbout(target.keys, base64);
+      toast.success("Image loaded! Click Save All Changes to apply.", { id: "upload-about" });
+    } catch {
+      toast.error("Failed to process image.", { id: "upload-about" });
+    }
+  };
+
   const handleSave = async (e) => {
     e.preventDefault();
     setSaving(true);
@@ -161,6 +396,8 @@ export default function ManageContent() {
       </div>
     );
   }
+
+  const about = content.about || ABOUT_DEFAULTS;
 
   // Render a banner section editor helper
   const renderBannerEditor = (sectionKey, titleLabel, defaultPlaceholderImage, showBadge = false) => {
@@ -413,6 +650,9 @@ export default function ManageContent() {
           { id: "offer", label: "Festive Early Bird Offer" },
           { id: "contact", label: "Contact Details & Office" },
           { id: "footer", label: "Footer Info" },
+          { id: "aboutIntro", label: "About: Banner & Intro" },
+          { id: "aboutStory", label: "About: Story & Why" },
+          { id: "aboutTeam", label: "About: Team & CTA" },
         ].map((tab) => (
           <button
             key={tab.id}
@@ -431,6 +671,14 @@ export default function ManageContent() {
 
       {/* Content Form */}
       <div className="rounded-b-2xl border border-t-0 border-gray-200 bg-white p-6 shadow-xs font-montserrat text-xs">
+        <input
+          type="file"
+          ref={aboutFileRef}
+          accept="image/*"
+          onChange={handleAboutFileChange}
+          className="hidden"
+        />
+
         {/* TAB 1: HOME PAGE BANNER */}
         {activeTab === "hero" &&
           renderBannerEditor(
@@ -704,6 +952,413 @@ export default function ManageContent() {
                 />
               </div>
             </div>
+          </div>
+        )}
+
+        {/* TAB 5: ABOUT PAGE - BANNER & INTRO */}
+        {activeTab === "aboutIntro" && (
+          <div className="space-y-6">
+            <AboutGroupTitle
+              title="Page Banner"
+              note="Full-width image and heading at the top of the About page."
+            />
+
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-[260px_1fr]">
+              <AboutImagePicker
+                label="Banner image (recommended 1600 x 600)"
+                src={about.banner.image}
+                onPick={() => pickAboutImage(["banner", "image"], 1600, 600)}
+                onClear={() => setAbout(["banner", "image"], "")}
+                height="h-36"
+              />
+              <div className="space-y-4">
+                <AboutField
+                  label="Banner title"
+                  value={about.banner.title}
+                  onChange={(value) => setAbout(["banner", "title"], value)}
+                />
+                <AboutField
+                  label="Banner subtitle"
+                  value={about.banner.subtitle}
+                  onChange={(value) => setAbout(["banner", "subtitle"], value)}
+                />
+              </div>
+            </div>
+
+            <AboutGroupTitle
+              title="Intro Section"
+              note="The 'About Leela Tours' heading block, its paragraph and button."
+            />
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <AboutField
+                label="Small tag line"
+                value={about.intro.tag}
+                onChange={(value) => setAbout(["intro", "tag"], value)}
+              />
+              <AboutField
+                label="Button text"
+                value={about.intro.ctaText}
+                onChange={(value) => setAbout(["intro", "ctaText"], value)}
+              />
+            </div>
+
+            <AboutField
+              label="Main heading"
+              value={about.intro.title}
+              onChange={(value) => setAbout(["intro", "title"], value)}
+            />
+            <AboutField
+              label="Paragraph"
+              multiline
+              rows={4}
+              value={about.intro.text}
+              onChange={(value) => setAbout(["intro", "text"], value)}
+            />
+
+            <AboutGroupTitle title="Statistics Cards" note="Shown under the intro paragraph." />
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {about.intro.stats.map((stat, index) => (
+                <div key={index} className="rounded-xl border border-gray-200 bg-gray-50 p-3">
+                  <label className="mb-1 block text-[11px] font-semibold text-gray-500">Number</label>
+                  <input
+                    type="text"
+                    value={stat.number}
+                    onChange={(e) =>
+                      patchAboutItem(["intro", "stats"], index, { number: e.target.value })
+                    }
+                    className="h-8 w-full rounded-lg border border-gray-300 bg-white px-2 text-xs font-bold text-[#ff6500]"
+                  />
+                  <label className="mb-1 mt-2 block text-[11px] font-semibold text-gray-500">
+                    Label
+                  </label>
+                  <input
+                    type="text"
+                    value={stat.label}
+                    onChange={(e) =>
+                      patchAboutItem(["intro", "stats"], index, { label: e.target.value })
+                    }
+                    className="h-8 w-full rounded-lg border border-gray-300 bg-white px-2 text-xs"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeAboutItem(["intro", "stats"], index)}
+                    className="mt-2 text-[11px] font-semibold text-red-600 hover:underline cursor-pointer"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {about.intro.stats.length < 6 && (
+              <button
+                type="button"
+                onClick={() => addAboutItem(["intro", "stats"], { number: "", label: "" })}
+                className="rounded-lg border border-gray-300 px-4 py-2 text-[11px] font-bold text-gray-600 hover:bg-gray-50 cursor-pointer"
+              >
+                + Add statistic
+              </button>
+            )}
+
+            <AboutGroupTitle
+              title="Intro Photos (3)"
+              note="The tilted photo collage on the right side of the intro section."
+            />
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              {[0, 1, 2].map((slot) => (
+                <AboutImagePicker
+                  key={slot}
+                  label={`Photo ${slot + 1} (recommended 800 x 800)`}
+                  src={about.intro.images?.[slot] || ""}
+                  onPick={() => pickAboutImage(["intro", "images", slot], 800, 800)}
+                  onClear={() => setAbout(["intro", "images", slot], "")}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 6: ABOUT PAGE - STORY & WHY */}
+        {activeTab === "aboutStory" && (
+          <div className="space-y-6">
+            <AboutGroupTitle
+              title="Our Story"
+              note="The blue story band with the vehicle photo."
+            />
+
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-[260px_1fr]">
+              <AboutImagePicker
+                label="Story image (recommended 1200 x 900)"
+                src={about.story.image}
+                onPick={() => pickAboutImage(["story", "image"], 1200, 900)}
+                onClear={() => setAbout(["story", "image"], "")}
+                height="h-36"
+              />
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <AboutField
+                    label="Small tag line"
+                    value={about.story.tag}
+                    onChange={(value) => setAbout(["story", "tag"], value)}
+                  />
+                  <AboutField
+                    label="Heading"
+                    value={about.story.title}
+                    onChange={(value) => setAbout(["story", "title"], value)}
+                  />
+                </div>
+                <AboutField
+                  label="Paragraph 1"
+                  multiline
+                  rows={4}
+                  value={about.story.text1}
+                  onChange={(value) => setAbout(["story", "text1"], value)}
+                />
+                <AboutField
+                  label="Paragraph 2"
+                  multiline
+                  rows={3}
+                  value={about.story.text2}
+                  onChange={(value) => setAbout(["story", "text2"], value)}
+                />
+              </div>
+            </div>
+
+            <AboutGroupTitle
+              title="Trust Points"
+              note="The icon list on the right of the story band."
+            />
+
+            <div className="space-y-2">
+              {about.story.trustPoints.map((point, index) => (
+                <div key={index} className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={point.title}
+                    onChange={(e) =>
+                      patchAboutItem(["story", "trustPoints"], index, { title: e.target.value })
+                    }
+                    className="h-10 flex-1 rounded-xl border border-gray-300 bg-white px-3 text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeAboutItem(["story", "trustPoints"], index)}
+                    className="rounded-lg border border-red-200 px-3 py-2 text-[11px] font-semibold text-red-600 hover:bg-red-50 cursor-pointer"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {about.story.trustPoints.length < 6 && (
+              <button
+                type="button"
+                onClick={() => addAboutItem(["story", "trustPoints"], { title: "" })}
+                className="rounded-lg border border-gray-300 px-4 py-2 text-[11px] font-bold text-gray-600 hover:bg-gray-50 cursor-pointer"
+              >
+                + Add trust point
+              </button>
+            )}
+
+            <AboutGroupTitle title="Why Choose Us" note="The row of small reason cards." />
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <AboutField
+                label="Small tag line"
+                value={about.why.tag}
+                onChange={(value) => setAbout(["why", "tag"], value)}
+              />
+              <AboutField
+                label="Heading"
+                value={about.why.title}
+                onChange={(value) => setAbout(["why", "title"], value)}
+              />
+            </div>
+
+            <div className="space-y-3">
+              {about.why.items.map((item, index) => (
+                <div key={index} className="rounded-xl border border-gray-200 bg-gray-50 p-3">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_1fr_140px_auto]">
+                    <input
+                      type="text"
+                      value={item.title}
+                      placeholder="Card title"
+                      onChange={(e) =>
+                        patchAboutItem(["why", "items"], index, { title: e.target.value })
+                      }
+                      className="h-10 rounded-lg border border-gray-300 bg-white px-3 text-sm"
+                    />
+                    <input
+                      type="text"
+                      value={item.description}
+                      placeholder="One line detail"
+                      onChange={(e) =>
+                        patchAboutItem(["why", "items"], index, { description: e.target.value })
+                      }
+                      className="h-10 rounded-lg border border-gray-300 bg-white px-3 text-sm"
+                    />
+                    <select
+                      value={item.icon}
+                      onChange={(e) => patchAboutItem(["why", "items"], index, { icon: e.target.value })}
+                      className="h-10 rounded-lg border border-gray-300 bg-white px-2 text-sm"
+                    >
+                      {ABOUT_ICONS.map((name) => (
+                        <option key={name} value={name}>
+                          {name}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => removeAboutItem(["why", "items"], index)}
+                      className="rounded-lg border border-red-200 px-3 text-[11px] font-semibold text-red-600 hover:bg-red-50 cursor-pointer"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {about.why.items.length < 8 && (
+              <button
+                type="button"
+                onClick={() =>
+                  addAboutItem(["why", "items"], { title: "", description: "", icon: "star" })
+                }
+                className="rounded-lg border border-gray-300 px-4 py-2 text-[11px] font-bold text-gray-600 hover:bg-gray-50 cursor-pointer"
+              >
+                + Add reason
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* TAB 7: ABOUT PAGE - TEAM, TESTIMONIALS & CTA */}
+        {activeTab === "aboutTeam" && (
+          <div className="space-y-6">
+            <AboutGroupTitle
+              title="Our Team"
+              note="The orange band with the team member cards."
+            />
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <AboutField
+                label="Small tag line"
+                value={about.team.tag}
+                onChange={(value) => setAbout(["team", "tag"], value)}
+              />
+              <AboutField
+                label="Heading"
+                value={about.team.title}
+                onChange={(value) => setAbout(["team", "title"], value)}
+              />
+            </div>
+
+            <AboutField
+              label="Paragraph"
+              multiline
+              rows={3}
+              value={about.team.text}
+              onChange={(value) => setAbout(["team", "text"], value)}
+            />
+            <AboutField
+              label="Button text"
+              value={about.team.ctaText}
+              onChange={(value) => setAbout(["team", "ctaText"], value)}
+              hint="Opens WhatsApp with a message. The number comes from Contact Details."
+            />
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {about.team.members.map((member, index) => (
+                <div key={index} className="rounded-xl border border-gray-200 bg-gray-50 p-3">
+                  <AboutImagePicker
+                    label={`Photo of ${member.name || `member ${index + 1}`}`}
+                    src={member.photo}
+                    onPick={() => pickAboutImage(["team", "members", index, "photo"], 700, 700)}
+                    onClear={() => setAbout(["team", "members", index, "photo"], "")}
+                  />
+                  <input
+                    type="text"
+                    value={member.name}
+                    placeholder="Name"
+                    onChange={(e) =>
+                      patchAboutItem(["team", "members"], index, { name: e.target.value })
+                    }
+                    className="mt-2 h-9 w-full rounded-lg border border-gray-300 bg-white px-2 text-xs"
+                  />
+                  <input
+                    type="text"
+                    value={member.role}
+                    placeholder="Role (e.g. Tour Manager)"
+                    onChange={(e) =>
+                      patchAboutItem(["team", "members"], index, { role: e.target.value })
+                    }
+                    className="mt-2 h-9 w-full rounded-lg border border-gray-300 bg-white px-2 text-xs"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeAboutItem(["team", "members"], index)}
+                    className="mt-2 text-[11px] font-semibold text-red-600 hover:underline cursor-pointer"
+                  >
+                    Remove member
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {about.team.members.length < 8 && (
+              <button
+                type="button"
+                onClick={() =>
+                  addAboutItem(["team", "members"], { name: "", role: "", photo: "" })
+                }
+                className="rounded-lg border border-gray-300 px-4 py-2 text-[11px] font-bold text-gray-600 hover:bg-gray-50 cursor-pointer"
+              >
+                + Add team member
+              </button>
+            )}
+
+            <AboutGroupTitle
+              title="Testimonials Heading"
+              note="The review cards themselves come from approved reviews in Manage Reviews."
+            />
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <AboutField
+                label="Small tag line"
+                value={about.testimonials.tag}
+                onChange={(value) => setAbout(["testimonials", "tag"], value)}
+              />
+              <AboutField
+                label="Heading"
+                value={about.testimonials.title}
+                onChange={(value) => setAbout(["testimonials", "title"], value)}
+              />
+            </div>
+
+            <AboutGroupTitle
+              title="Bottom WhatsApp Band"
+              note="The blue call-to-action strip at the end of the page."
+            />
+            <AboutField
+              label="Heading"
+              value={about.cta.title}
+              onChange={(value) => setAbout(["cta", "title"], value)}
+            />
+            <AboutField
+              label="Subtitle"
+              value={about.cta.subtitle}
+              onChange={(value) => setAbout(["cta", "subtitle"], value)}
+            />
+            <AboutField
+              label="Button text"
+              value={about.cta.buttonText}
+              onChange={(value) => setAbout(["cta", "buttonText"], value)}
+            />
           </div>
         )}
       </div>

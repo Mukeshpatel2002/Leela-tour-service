@@ -14,6 +14,7 @@ import CategoriesPage from "./pages/CategoriesPage";
 // first-time visitors download.
 const TourDetailsPage = lazy(() => import("./pages/TourDetailsPage"));
 const SubmitReviewPage = lazy(() => import("./pages/SubmitReviewPage"));
+const AboutPage = lazy(() => import("./pages/AboutPage"));
 
 // Admin Pages
 const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
@@ -45,6 +46,7 @@ export default function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/tour/:id" element={<TourDetailsPage />} />
           <Route path="/contact" element={<ContactPage />} />
+          <Route path="/about" element={<AboutPage />} />
           <Route path="/themed-tour" element={<ThemedTourPage />} />
           <Route path="/group-tour" element={<GroupTourPage />} />
           <Route path="/categories/:type" element={<CategoriesPage />} />

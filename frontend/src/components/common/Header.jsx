@@ -10,17 +10,6 @@ export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const contact = useContact();
 
-  const handleAboutClick = (e) => {
-    e.preventDefault();
-    setMobileOpen(false);
-    const footerEl = document.getElementById("footer") || document.getElementById("about-us");
-    if (footerEl) {
-      footerEl.scrollIntoView({ behavior: "smooth" });
-    } else {
-      window.location.href = "/#footer";
-    }
-  };
-
   return (
     <header className="sticky top-0 z-50 w-full bg-[#078bd3] text-white shadow-md">
       <div className="mx-auto flex min-h-[90px] md:min-h-[110px] max-w-[1440px] items-center justify-between px-6 py-2 md:px-10">
@@ -175,14 +164,14 @@ export default function Header() {
             </div>
           </div>
 
-          {/* About Us (Smooth Scroll to Footer) */}
-          <a
-            href="#footer"
-            onClick={handleAboutClick}
-            className="font-montserrat text-[17px] font-semibold tracking-wide hover:text-blue-100 transition cursor-pointer"
+          {/* About Us Page */}
+          <Link
+            to="/about"
+            onClick={() => setMobileOpen(false)}
+            className="font-montserrat text-[17px] font-semibold tracking-wide hover:text-blue-100 transition"
           >
             ABOUT US
-          </a>
+          </Link>
 
           {/* WhatsApp Direct Contact Button */}
           <a
