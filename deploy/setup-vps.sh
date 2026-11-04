@@ -136,6 +136,8 @@ sed "s/__DOMAIN__/$DOMAIN/g" "$APP_DIR/deploy/nginx-leela.conf" > /etc/nginx/sit
 ln -sfn /etc/nginx/sites-available/leela /etc/nginx/sites-enabled/leela
 rm -f /etc/nginx/sites-enabled/default
 nginx -t
+systemctl reload nginx || systemctl restart nginx
+echo "nginx reload ho gaya (naya vhost ab live hai)"
 
 step "8/9  firewall"
 ufw allow OpenSSH >/dev/null
