@@ -28,6 +28,7 @@ const ManageEnquiries = lazy(() => import("./pages/admin/ManageEnquiries"));
 const ManageReviews = lazy(() => import("./pages/admin/ManageReviews"));
 const ManageFaqs = lazy(() => import("./pages/admin/ManageFaqs"));
 import ProtectedRoute from "./components/common/ProtectedRoute";
+import ScrollJump from "./components/common/ScrollJump";
 
 const RouteFallback = () => (
   <div className="flex min-h-[50vh] w-full items-center justify-center">
@@ -40,6 +41,7 @@ export default function App() {
     <AdminAuthProvider>
       <BrowserRouter>
         <Toaster position="top-right" />
+        <ScrollJump />
         <Suspense fallback={<RouteFallback />}>
           <Routes>
           {/* Public Routes (No traveler login required) */}

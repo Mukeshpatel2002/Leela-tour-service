@@ -5,7 +5,6 @@ import {
   FaMapMarkerAlt,
   FaUtensils,
   FaHome,
-  FaThumbsUp,
 } from "react-icons/fa";
 
 export default function TourOverview({ tour }) {
@@ -39,11 +38,6 @@ export default function TourOverview({ tour }) {
       label: "Stay",
       value: highlights.stay || "Houseboat and 3 star hotels",
     },
-    {
-      icon: <FaThumbsUp className="text-xl text-[#ff6500]" />,
-      label: "Best for",
-      value: highlights.bestFor || "Families, couples, seniors",
-    },
   ];
 
   return (
@@ -64,7 +58,7 @@ export default function TourOverview({ tour }) {
         </h3>
       </div>
 
-      {/* 6 Information Cards */}
+      {/* Information Cards */}
       <div className="flex flex-col gap-3.5">
         {infoItems.map((item, index) => (
           <div
