@@ -211,11 +211,11 @@ Query: ${formData.query || "I want to inquire about tours."}`;
                 />
               </div>
 
-              <div className="flex flex-wrap items-center gap-3 pt-2">
+              <div className="flex flex-col gap-3 pt-2 sm:flex-row">
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="flex-1 rounded-full bg-[#ff6500] hover:bg-orange-600 px-6 py-3 text-sm font-bold text-white shadow transition disabled:opacity-50 cursor-pointer"
+                  className="w-full rounded-full bg-[#ff6500] hover:bg-orange-600 px-6 py-3 text-sm font-bold text-white shadow transition disabled:opacity-50 cursor-pointer sm:flex-1"
                 >
                   {submitting ? "Submitting..." : "Submit Inquiry"}
                 </button>
@@ -223,7 +223,7 @@ Query: ${formData.query || "I want to inquire about tours."}`;
                 <button
                   type="button"
                   onClick={handleWhatsApp}
-                  className="flex items-center justify-center gap-2 rounded-full bg-[#08a900] hover:bg-green-700 px-5 py-3 text-sm font-bold text-white shadow transition cursor-pointer"
+                  className="flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-full bg-[#08a900] hover:bg-green-700 px-5 py-3 text-sm font-bold text-white shadow transition cursor-pointer sm:flex-1"
                 >
                   <FaWhatsapp className="text-lg" />
                   <span>Chat on WhatsApp</span>

@@ -237,7 +237,10 @@ export default function StepsSection() {
                 aria-hidden="true"
                 className="h-6 w-6 shrink-0 object-contain"
               />
-              {offerContent.ctaText} →
+              <span className="min-w-0">{offerContent.ctaText}</span>
+              <span aria-hidden="true" className="shrink-0">
+                →
+              </span>
             </a>
           </div>
         </div>
