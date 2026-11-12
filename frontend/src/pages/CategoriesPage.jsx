@@ -257,11 +257,11 @@ export default function CategoriesPage() {
 
           {/* FLOATING STATS PILL - Exactly Matching User's Uploaded Mockup */}
           <div className="relative z-20 mx-auto -mt-10 sm:-mt-12 md:-mt-14 w-[92%] max-w-[1240px] rounded-[22px] sm:rounded-[28px] border border-sky-300/80 bg-white px-4 py-4 sm:py-6 shadow-[0_12px_40px_rgba(0,0,0,0.12)]">
-            <div className="grid grid-cols-2 md:grid-cols-4 items-center">
+            <div className="grid grid-cols-2 items-stretch md:grid-cols-4">
               {heroStats.map((item, idx) => (
                 <div
                   key={idx}
-                  className={`flex flex-col items-center justify-center px-3 sm:px-6 py-2 text-center ${
+                  className={`flex flex-col items-center justify-center px-3 sm:px-6 py-3 text-center ${
                     idx < heroStats.length - 1 ? "md:border-r border-sky-400" : ""
                   } ${idx < 2 ? "border-b border-sky-300/40 md:border-b-0" : ""}`}
                 >
